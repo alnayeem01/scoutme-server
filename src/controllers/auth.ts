@@ -1,27 +1,33 @@
 import { RequestHandler } from "express";
 import admin from "../utils/firebaseAdmin";
-import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
+import { DecodedIdToken } from "firebase-admin/auth";
 
 export const registerUser: RequestHandler = async (req, res) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader)
+  if (!authHeader) {
     return res
-      .status(403)
-      .json({ error: "Unauthorised Access, Please try again" });
-  const token = authHeader.split(" ")[1];
+      .status(401)
+      .json({ error: "Unauthorized: missing Authorization header" });
+  }
+
+  const parts = authHeader.split(" ");
+  const token = parts.length === 2 ? parts[1] : authHeader;
 
   try {
-  } catch (e) {
-    // verify fireabse token
-    const deocodedToken: DecodedIdToken = await admin
-      .auth()
-      .verifyIdToken(token);
+    const decodedToken: DecodedIdToken = await admin.auth().verifyIdToken(token);
+    const { uid, email, name, picture, phone_number } = decodedToken as unknown as {
+      uid: string;
+      email?: string;
+      name?: string;
+      picture?: string;
+      phone_number?: string;
+    };
 
-    //destructure all attributes
-    const { uid, email, phone_number, picture } = deocodedToken;
     return res.json({
       message: "Token verified successfully",
-      user: { uid, email, name, picture },
+      user: { uid, email: email ?? null, name: name ?? null, picture: picture ?? null, phoneNumber: phone_number ?? null },
     });
+  } catch (error) {
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
 };
