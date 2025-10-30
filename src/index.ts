@@ -2,11 +2,13 @@ import express from 'express';
 import dotenv from 'dotenv';
 import authRouter from './routers/auth'
 dotenv.config();
+console.log("Loaded FIREBASE_PRIVATE_KEY:", process.env.FIREBASE_PRIVATE_KEY ? "✅ Exists" : "❌ Missing");
+
 
 const app = express()
 app.use(express.json())
 
-app.use('/',(req,res)=>{
+app.get('/',(req,res)=>{
     return res.json('Hello World')
 })
 app.use('/auth', authRouter);
