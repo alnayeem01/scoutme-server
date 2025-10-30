@@ -7,16 +7,11 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
-    return callback(null, true); // allow all origins dynamically
-  },
-  credentials: true,
+  origin: "http://localhost:3000", // frontend
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 }));
-
 
 app.get("/", (req, res) => res.json("Hello World"));
 

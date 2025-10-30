@@ -1,27 +1,34 @@
 import { RequestHandler } from "express";
-import admin from "../utils/firebaseAdmin";
-import { DecodedIdToken } from "firebase-admin/lib/auth/token-verifier";
+import { PrismaClient } from "../generated/prisma/client";
+
+const prisma = new PrismaClient();
 
 export const registerUser: RequestHandler = async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader)
-    return res
-      .status(403)
-      .json({ error: "Unauthorised Access, Please try again" });
-  const token = authHeader.split(" ")[1];
-
+  
   try {
-  } catch (e) {
-    // verify fireabse token
-    const deocodedToken: DecodedIdToken = await admin
-      .auth()
-      .verifyIdToken(token);
-
-    //destructure all attributes
-    const { uid, email, phone_number, picture } = deocodedToken;
-    return res.json({
-      message: "Token verified successfully",
-      user: { uid, email, name, picture },
+    const { name, email, phone, photoUrl, firebaseUid } = req.body;
+    if (!firebaseUid || !email || !name) {
+      return res
+        .status(400)
+        .json({ error: "firebaseUid, name and email are required" });
+    }
+    // create new user
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        firebaseUid,
+        name,
+        phone,
+        avatar: photoUrl,
+      },
     });
+
+    return res.status(200).json({
+      message: "User registered sucessfully",
+      user: { newUser },
+    });
+  } catch (e) {
+    console.error("Register error:", e);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };

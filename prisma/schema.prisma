@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -14,14 +8,540 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model auth_group {
+  id                     Int                      @id @default(autoincrement())
+  name                   String                   @unique @db.VarChar(150)
+  auth_group_permissions auth_group_permissions[]
+  auth_user_groups       auth_user_groups[]
 
-model User {
-  id        Int      @id @default(autoincrement())
-  firebaseUid String  @unique
-  email     String?  @unique
-  name      String?
-  phone     String?
-  avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([name], map: "auth_group_name_a6ea08ec_like")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model auth_group_permissions {
+  id              BigInt          @id @default(autoincrement())
+  group_id        Int
+  permission_id   Int
+  auth_permission auth_permission @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_group_permissio_permission_id_84c5c92e_fk_auth_perm")
+  auth_group      auth_group      @relation(fields: [group_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_group_permissions_group_id_b120cbf9_fk_auth_group_id")
+
+  @@unique([group_id, permission_id], map: "auth_group_permissions_group_id_permission_id_0cd325b0_uniq")
+  @@index([group_id], map: "auth_group_permissions_group_id_b120cbf9")
+  @@index([permission_id], map: "auth_group_permissions_permission_id_84c5c92e")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model auth_permission {
+  id                         Int                          @id @default(autoincrement())
+  name                       String                       @db.VarChar(255)
+  content_type_id            Int
+  codename                   String                       @db.VarChar(100)
+  auth_group_permissions     auth_group_permissions[]
+  django_content_type        django_content_type          @relation(fields: [content_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_permission_content_type_id_2f476e4b_fk_django_co")
+  auth_user_user_permissions auth_user_user_permissions[]
+
+  @@unique([content_type_id, codename], map: "auth_permission_content_type_id_codename_01ab375a_uniq")
+  @@index([content_type_id], map: "auth_permission_content_type_id_2f476e4b")
+}
+
+model auth_user {
+  id                         Int                          @id @default(autoincrement())
+  password                   String                       @db.VarChar(128)
+  last_login                 DateTime?                    @db.Timestamptz(6)
+  is_superuser               Boolean
+  username                   String                       @unique @db.VarChar(150)
+  first_name                 String                       @db.VarChar(150)
+  last_name                  String                       @db.VarChar(150)
+  email                      String                       @db.VarChar(254)
+  is_staff                   Boolean
+  is_active                  Boolean
+  date_joined                DateTime                     @db.Timestamptz(6)
+  auth_user_groups           auth_user_groups[]
+  auth_user_user_permissions auth_user_user_permissions[]
+  django_admin_log           django_admin_log[]
+  smo_customers              smo_customers?
+
+  @@index([username], map: "auth_user_username_6821ab7c_like")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model auth_user_groups {
+  id         BigInt     @id @default(autoincrement())
+  user_id    Int
+  group_id   Int
+  auth_group auth_group @relation(fields: [group_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_user_groups_group_id_97559544_fk_auth_group_id")
+  auth_user  auth_user  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_user_groups_user_id_6a12ed8b_fk_auth_user_id")
+
+  @@unique([user_id, group_id], map: "auth_user_groups_user_id_group_id_94350c0c_uniq")
+  @@index([group_id], map: "auth_user_groups_group_id_97559544")
+  @@index([user_id], map: "auth_user_groups_user_id_6a12ed8b")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model auth_user_user_permissions {
+  id              BigInt          @id @default(autoincrement())
+  user_id         Int
+  permission_id   Int
+  auth_permission auth_permission @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm")
+  auth_user       auth_user       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id")
+
+  @@unique([user_id, permission_id], map: "auth_user_user_permissions_user_id_permission_id_14a6b632_uniq")
+  @@index([permission_id], map: "auth_user_user_permissions_permission_id_1fbb5f2c")
+  @@index([user_id], map: "auth_user_user_permissions_user_id_a95ead1b")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model ball_tracking {
+  id                  BigInt              @id @default(autoincrement())
+  frame_number        Int
+  time_seconds        Float
+  bbox_x1             Float
+  bbox_y1             Float
+  bbox_x2             Float
+  bbox_y2             Float
+  confidence          Float?
+  speed               Float?
+  direction           Float?
+  job_id              BigInt
+  match_analysis_jobs match_analysis_jobs @relation(fields: [job_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ball_tracking_job_id_fb2dab28_fk_match_analysis_jobs_id")
+
+  @@index([job_id, frame_number], map: "ball_tracki_job_id_99b433_idx")
+  @@index([job_id, time_seconds], map: "ball_tracki_job_id_f2f7a5_idx")
+  @@index([frame_number], map: "ball_tracking_frame_number_fe4df2d3")
+  @@index([job_id], map: "ball_tracking_job_id_fb2dab28")
+  @@index([time_seconds], map: "ball_tracking_time_seconds_5857deee")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model django_admin_log {
+  id                  Int                  @id @default(autoincrement())
+  action_time         DateTime             @db.Timestamptz(6)
+  object_id           String?
+  object_repr         String               @db.VarChar(200)
+  action_flag         Int                  @db.SmallInt
+  change_message      String
+  content_type_id     Int?
+  user_id             Int
+  django_content_type django_content_type? @relation(fields: [content_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "django_admin_log_content_type_id_c4bce8eb_fk_django_co")
+  auth_user           auth_user            @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "django_admin_log_user_id_c564eba6_fk_auth_user_id")
+
+  @@index([content_type_id], map: "django_admin_log_content_type_id_c4bce8eb")
+  @@index([user_id], map: "django_admin_log_user_id_c564eba6")
+}
+
+model django_content_type {
+  id               Int                @id @default(autoincrement())
+  app_label        String             @db.VarChar(100)
+  model            String             @db.VarChar(100)
+  auth_permission  auth_permission[]
+  django_admin_log django_admin_log[]
+
+  @@unique([app_label, model], map: "django_content_type_app_label_model_76bd3d3b_uniq")
+}
+
+model django_migrations {
+  id      BigInt   @id @default(autoincrement())
+  app     String   @db.VarChar(255)
+  name    String   @db.VarChar(255)
+  applied DateTime @db.Timestamptz(6)
+}
+
+model django_session {
+  session_key  String   @id @db.VarChar(40)
+  session_data String
+  expire_date  DateTime @db.Timestamptz(6)
+
+  @@index([expire_date], map: "django_session_expire_date_a5c62663")
+  @@index([session_key], map: "django_session_session_key_c0390e0f_like")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model lineup_extractions {
+  id               BigInt           @id @default(autoincrement())
+  source_image_url String?          @db.VarChar(200)
+  extracted_at     DateTime         @db.Timestamptz(6)
+  team_name        String?          @db.VarChar(100)
+  created_at       DateTime?        @db.Timestamptz(6)
+  updated_at       DateTime?        @db.Timestamptz(6)
+  match_request_id BigInt?
+  user_id          BigInt
+  match_requests   match_requests?  @relation(fields: [match_request_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "lineup_extractions_match_request_id_1b54672f_fk_match_req")
+  smo_customers    smo_customers    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "lineup_extractions_user_id_a42e6e9b_fk_smo_customers_id")
+  lineup_players   lineup_players[]
+
+  @@index([user_id, match_request_id], map: "lineup_extr_user_id_14556b_idx")
+  @@index([match_request_id], map: "lineup_extractions_match_request_id_1b54672f")
+  @@index([user_id], map: "lineup_extractions_user_id_a42e6e9b")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model lineup_players {
+  id                   BigInt             @id @default(autoincrement())
+  jersey_number        String             @db.VarChar(5)
+  player_name          String             @db.VarChar(255)
+  position             String?            @db.VarChar(50)
+  lineup_extraction_id BigInt
+  lineup_extractions   lineup_extractions @relation(fields: [lineup_extraction_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "lineup_players_lineup_extraction_id_382c9945_fk_lineup_ex")
+
+  @@unique([lineup_extraction_id, jersey_number], map: "lineup_players_lineup_extraction_id_jersey_number_343136f9_uniq")
+  @@index([lineup_extraction_id], map: "lineup_players_lineup_extraction_id_382c9945")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model match_analysis_jobs {
+  id                     BigInt                   @id @default(autoincrement())
+  job_uuid               String                   @unique @db.Uuid
+  video_filename         String                   @db.VarChar(255)
+  video_path             String                   @db.VarChar(500)
+  status                 String                   @db.VarChar(50)
+  match_date             DateTime?                @db.Date
+  team_home              String?                  @db.VarChar(100)
+  team_away              String?                  @db.VarChar(100)
+  league                 String?                  @db.VarChar(100)
+  created_at             DateTime                 @db.Timestamptz(6)
+  started_at             DateTime?                @db.Timestamptz(6)
+  completed_at           DateTime?                @db.Timestamptz(6)
+  total_frames           Int?
+  fps                    Float?
+  video_duration         Unsupported("interval")?
+  error_message          String?
+  user_id                BigInt
+  updated_at             DateTime?                @db.Timestamptz(6)
+  ball_tracking          ball_tracking[]
+  smo_customers          smo_customers            @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "match_analysis_jobs_user_id_2778503c_fk_smo_customers_id")
+  match_analysis_results match_analysis_results?
+  match_performances     match_performances[]
+  pass_events            pass_events[]
+  player_tracking        player_tracking[]
+
+  @@index([created_at], map: "match_analy_created_f487a9_idx")
+  @@index([job_uuid], map: "match_analy_job_uui_8034ef_idx")
+  @@index([status, created_at], map: "match_analy_status_b80a55_idx")
+  @@index([user_id, status], map: "match_analy_user_id_0fa935_idx")
+  @@index([created_at], map: "match_analysis_jobs_created_at_64470f3d")
+  @@index([status], map: "match_analysis_jobs_status_8c272aab")
+  @@index([status], map: "match_analysis_jobs_status_8c272aab_like")
+  @@index([user_id], map: "match_analysis_jobs_user_id_2778503c")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model match_analysis_results {
+  id                     BigInt                   @id @default(autoincrement())
+  total_passes           Int
+  successful_passes      Int
+  pass_accuracy          Float?
+  home_team_passes       Int
+  away_team_passes       Int
+  total_players_detected Int
+  home_team_players      Int
+  away_team_players      Int
+  analysis_duration      Unsupported("interval")?
+  processing_notes       String?
+  created_at             DateTime                 @db.Timestamptz(6)
+  updated_at             DateTime                 @db.Timestamptz(6)
+  job_id                 BigInt                   @unique
+  match_analysis_jobs    match_analysis_jobs      @relation(fields: [job_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "match_analysis_resul_job_id_9509c812_fk_match_ana")
+
+  @@index([job_id], map: "match_analy_job_id_390bc9_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model match_performances {
+  id                       BigInt                     @id @default(autoincrement())
+  jersey_number            Int
+  tracker_id               Int
+  match_job_id             BigInt
+  player_id                BigInt
+  team_id                  BigInt?
+  match_analysis_jobs      match_analysis_jobs        @relation(fields: [match_job_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "match_performances_match_job_id_f035c6e1_fk_match_ana")
+  player_profiles          player_profiles            @relation(fields: [player_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "match_performances_player_id_fa2ca8c3_fk_player_profiles_id")
+  teams                    teams?                     @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "match_performances_team_id_1979ce1c_fk_teams_id")
+  performance_metrics      performance_metrics[]
+  player_event_logs        player_event_logs[]
+  player_position_tracking player_position_tracking[]
+
+  @@unique([player_id, match_job_id], map: "match_performances_player_id_match_job_id_2db4248b_uniq")
+  @@index([match_job_id], map: "match_perfo_match_j_ede8e1_idx")
+  @@index([player_id], map: "match_perfo_player__ac4ef9_idx")
+  @@index([team_id], map: "match_perfo_team_id_75e7fd_idx")
+  @@index([match_job_id], map: "match_performances_match_job_id_f035c6e1")
+  @@index([player_id], map: "match_performances_player_id_fa2ca8c3")
+  @@index([team_id], map: "match_performances_team_id_1979ce1c")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model match_requests {
+  id                 BigInt               @id @default(autoincrement())
+  video_url          String               @db.VarChar(200)
+  status             String               @db.VarChar(20)
+  request_date       DateTime             @db.Timestamptz(6)
+  user_id            BigInt
+  created_at         DateTime?            @db.Timestamptz(6)
+  updated_at         DateTime?            @db.Timestamptz(6)
+  job_uuid           String?              @unique @db.Uuid
+  lineup_extractions lineup_extractions[]
+  smo_customers      smo_customers        @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "match_requests_user_id_a8ae30ec_fk_smo_customers_id")
+  starting_lineups   starting_lineups[]
+
+  @@index([user_id], map: "match_requests_user_id_a8ae30ec")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model pass_events {
+  id                  BigInt              @id @default(autoincrement())
+  frame_number        Int
+  time_seconds        Float
+  pass_type           String              @db.VarChar(50)
+  passer_id           Int?
+  passer_team         String?             @db.VarChar(50)
+  passer_team_color   String?             @db.VarChar(7)
+  receiver_id         Int?
+  receiver_team       String?             @db.VarChar(50)
+  receiver_team_color String?             @db.VarChar(7)
+  ball_distance       Float?
+  pass_success        Boolean?
+  pass_accuracy       Float?
+  job_id              BigInt
+  match_analysis_jobs match_analysis_jobs @relation(fields: [job_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "pass_events_job_id_3c0fc778_fk_match_analysis_jobs_id")
+
+  @@index([frame_number], map: "pass_events_frame_number_ff8b3b44")
+  @@index([job_id], map: "pass_events_job_id_3c0fc778")
+  @@index([job_id, time_seconds], map: "pass_events_job_id_6bb6d6_idx")
+  @@index([job_id, pass_type], map: "pass_events_job_id_bef5a6_idx")
+  @@index([job_id, frame_number], map: "pass_events_job_id_c34941_idx")
+  @@index([pass_type], map: "pass_events_pass_type_c12bdad2")
+  @@index([pass_type], map: "pass_events_pass_type_c12bdad2_like")
+  @@index([passer_id, passer_team], map: "pass_events_passer__6e06ac_idx")
+  @@index([receiver_id, receiver_team], map: "pass_events_receive_df9e0f_idx")
+  @@index([time_seconds], map: "pass_events_time_seconds_1e4514da")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model performance_metrics {
+  id                 BigInt             @id @default(autoincrement())
+  category           String             @db.VarChar(20)
+  metric_name        String             @db.VarChar(100)
+  metric_value       Float
+  unit               String?            @db.VarChar(50)
+  description        String?
+  performance_id     BigInt
+  match_performances match_performances @relation(fields: [performance_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "performance_metrics_performance_id_1be945b0_fk_match_per")
+
+  @@unique([performance_id, category, metric_name], map: "performance_metrics_performance_id_category__9e161c73_uniq")
+  @@index([category], map: "performance_categor_cc63a5_idx")
+  @@index([metric_name], map: "performance_metric__e4cad1_idx")
+  @@index([performance_id], map: "performance_metrics_performance_id_1be945b0")
+  @@index([performance_id], map: "performance_perform_1e640f_idx")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model player_event_logs {
+  id                 BigInt             @id @default(autoincrement())
+  event_type         String             @db.VarChar(20)
+  timestamp          Float
+  details            Json
+  performance_id     BigInt
+  match_performances match_performances @relation(fields: [performance_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "player_event_logs_performance_id_66fa8de7_fk_match_per")
+
+  @@index([event_type], map: "player_even_event_t_1244fb_idx")
+  @@index([performance_id], map: "player_even_perform_b4a0ed_idx")
+  @@index([timestamp], map: "player_even_timesta_599215_idx")
+  @@index([performance_id], map: "player_event_logs_performance_id_66fa8de7")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model player_position_tracking {
+  id                 BigInt             @id @default(autoincrement())
+  frame_number       Int
+  timestamp          Float
+  x_coordinate       Float
+  y_coordinate       Float
+  speed              Float?
+  acceleration       Float?
+  performance_id     BigInt
+  match_performances match_performances @relation(fields: [performance_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "player_position_trac_performance_id_1dc8e283_fk_match_per")
+
+  @@index([frame_number], map: "player_posi_frame_n_022a8a_idx")
+  @@index([performance_id], map: "player_posi_perform_e4e779_idx")
+  @@index([timestamp], map: "player_posi_timesta_feabe2_idx")
+  @@index([performance_id], map: "player_position_tracking_performance_id_1dc8e283")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model player_profiles {
+  id                  BigInt                @id @default(autoincrement())
+  external_id         String?               @unique @db.VarChar(255)
+  first_name          String                @db.VarChar(100)
+  last_name           String                @db.VarChar(100)
+  full_name           String                @db.VarChar(255)
+  date_of_birth       DateTime?             @db.Date
+  height_cm           Float?
+  weight_kg           Float?
+  primary_position    String                @db.VarChar(20)
+  secondary_positions Json
+  preferred_foot      String?               @db.VarChar(10)
+  jersey_numbers      Json
+  tracking_ids        Json
+  created_at          DateTime              @db.Timestamptz(6)
+  updated_at          DateTime              @db.Timestamptz(6)
+  profile_picture     String?               @db.VarChar(200)
+  current_team_id     BigInt?
+  match_performances  match_performances[]
+  teams               teams?                @relation(fields: [current_team_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "player_profiles_current_team_id_0c063a91_fk_teams_id")
+  player_team_history player_team_history[]
+
+  @@unique([first_name, last_name, date_of_birth], map: "player_profiles_first_name_last_name_dat_f2456888_uniq")
+  @@index([current_team_id], map: "player_prof_current_e6d0ff_idx")
+  @@index([date_of_birth], map: "player_prof_date_of_e88098_idx")
+  @@index([full_name], map: "player_prof_full_na_c478d2_idx")
+  @@index([primary_position], map: "player_prof_primary_452c5a_idx")
+  @@index([current_team_id], map: "player_profiles_current_team_id_0c063a91")
+  @@index([external_id], map: "player_profiles_external_id_633a1599_like")
+  @@index([full_name], map: "player_profiles_full_name_d99540d1")
+  @@index([full_name], map: "player_profiles_full_name_d99540d1_like")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model player_team_history {
+  id              BigInt          @id @default(autoincrement())
+  start_date      DateTime        @db.Date
+  end_date        DateTime?       @db.Date
+  jersey_number   Int?
+  player_id       BigInt
+  team_id         BigInt
+  player_profiles player_profiles @relation(fields: [player_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "player_team_history_player_id_a2cc694c_fk_player_profiles_id")
+  teams           teams           @relation(fields: [team_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "player_team_history_team_id_7c723a86_fk_teams_id")
+
+  @@unique([player_id, team_id, start_date], map: "player_team_history_player_id_team_id_start_date_59a93e83_uniq")
+  @@index([player_id], map: "player_team_history_player_id_a2cc694c")
+  @@index([team_id], map: "player_team_history_team_id_7c723a86")
+  @@index([player_id, team_id], map: "player_team_player__af4786_idx")
+  @@index([start_date, end_date], map: "player_team_start_d_f5a5bc_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model player_tracking {
+  id                  BigInt              @id @default(autoincrement())
+  frame_number        Int
+  time_seconds        Float
+  player_id           Int
+  team                String              @db.VarChar(50)
+  team_color          String              @db.VarChar(7)
+  bbox_x1             Float
+  bbox_y1             Float
+  bbox_x2             Float
+  bbox_y2             Float
+  has_ball            Boolean
+  confidence          Float?
+  speed               Float?
+  job_id              BigInt
+  match_analysis_jobs match_analysis_jobs @relation(fields: [job_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "player_tracking_job_id_c59a1fd9_fk_match_analysis_jobs_id")
+
+  @@index([job_id, player_id], map: "player_trac_job_id_048487_idx")
+  @@index([job_id, frame_number], map: "player_trac_job_id_07fa54_idx")
+  @@index([job_id, time_seconds], map: "player_trac_job_id_34faa8_idx")
+  @@index([job_id, team], map: "player_trac_job_id_632fbb_idx")
+  @@index([job_id, has_ball], map: "player_trac_job_id_88f27b_idx")
+  @@index([player_id, team], map: "player_trac_player__ee7a6b_idx")
+  @@index([frame_number], map: "player_tracking_frame_number_8d5b6af5")
+  @@index([has_ball], map: "player_tracking_has_ball_0f4229fc")
+  @@index([job_id], map: "player_tracking_job_id_c59a1fd9")
+  @@index([player_id], map: "player_tracking_player_id_2c7c2262")
+  @@index([team], map: "player_tracking_team_a34dd208")
+  @@index([team], map: "player_tracking_team_a34dd208_like")
+  @@index([time_seconds], map: "player_tracking_time_seconds_b0099064")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model smo_customers {
+  id                  BigInt                @id @default(autoincrement())
+  user_sub            String                @unique @db.VarChar(46)
+  name                String                @db.VarChar(255)
+  email               String                @unique @db.VarChar(254)
+  phoneno             String?               @unique @db.VarChar(15)
+  auth_provider       String                @db.VarChar(50)
+  created_at          DateTime              @db.Timestamptz(6)
+  updated_at          DateTime              @db.Timestamptz(6)
+  avatar              String?               @db.VarChar(2500)
+  is_active           Boolean
+  is_verified         Boolean
+  last_login          DateTime?             @db.Timestamptz(6)
+  oauth_access_token  String?
+  oauth_id            String?               @db.VarChar(255)
+  oauth_refresh_token String?
+  oauth_token_expires DateTime?             @db.Timestamptz(6)
+  django_user_id      Int?                  @unique
+  lineup_extractions  lineup_extractions[]
+  match_analysis_jobs match_analysis_jobs[]
+  match_requests      match_requests[]
+  auth_user           auth_user?            @relation(fields: [django_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "smo_customers_django_user_id_354556c8_fk_auth_user_id")
+  starting_lineups    starting_lineups[]
+
+  @@index([auth_provider], map: "smo_custome_auth_pr_a3ce2b_idx")
+  @@index([email], map: "smo_custome_email_6a9fea_idx")
+  @@index([oauth_id], map: "smo_custome_oauth_i_d62d33_idx")
+  @@index([user_sub], map: "smo_custome_user_su_aabfb3_idx")
+  @@index([email], map: "smo_customers_email_65a03100_like")
+  @@index([phoneno], map: "smo_customers_phoneno_f566d6f5_like")
+  @@index([user_sub], map: "smo_customers_user_sub_0707c410_like")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model starting_lineup_players {
+  id                 BigInt           @id @default(autoincrement())
+  player_name        String           @db.VarChar(255)
+  jersey_number      String?          @db.VarChar(10)
+  jersey_color       String?          @db.VarChar(50)
+  player_position    String?          @db.VarChar(50)
+  starting_lineup_id BigInt
+  created_at         DateTime?        @db.Timestamptz(6)
+  updated_at         DateTime?        @db.Timestamptz(6)
+  starting_lineups   starting_lineups @relation(fields: [starting_lineup_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "starting_lineup_play_starting_lineup_id_a6e553fb_fk_starting_")
+
+  @@index([player_name], map: "starting_li_player__1b9fb7_idx")
+  @@index([starting_lineup_id], map: "starting_li_startin_911062_idx")
+  @@index([starting_lineup_id], map: "starting_lineup_players_starting_lineup_id_a6e553fb")
+}
+
+/// This model has constraints using non-default deferring rules and requires additional setup for migrations. Visit https://pris.ly/d/constraint-deferring for more info.
+model starting_lineups {
+  id                      BigInt                    @id @default(autoincrement())
+  source_image_url        String?                   @db.VarChar(200)
+  extracted_at            DateTime                  @db.Timestamptz(6)
+  match_request_id        BigInt
+  user_id                 BigInt
+  created_at              DateTime?                 @db.Timestamptz(6)
+  updated_at              DateTime?                 @db.Timestamptz(6)
+  starting_lineup_players starting_lineup_players[]
+  match_requests          match_requests            @relation(fields: [match_request_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "starting_lineups_match_request_id_f50a554e_fk_match_requests_id")
+  smo_customers           smo_customers             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "starting_lineups_user_id_17a5749a_fk_smo_customers_id")
+
+  @@unique([user_id, match_request_id], map: "starting_lineups_user_id_match_request_id_1d7cd709_uniq")
+  @@index([user_id, match_request_id], map: "starting_li_user_id_c901e4_idx")
+  @@index([match_request_id], map: "starting_lineups_match_request_id_f50a554e")
+  @@index([user_id], map: "starting_lineups_user_id_17a5749a")
+}
+
+model teams {
+  id                  BigInt                @id @default(autoincrement())
+  name                String                @unique @db.VarChar(255)
+  country             String?               @db.VarChar(100)
+  league              String?               @db.VarChar(100)
+  logo                String?               @db.VarChar(200)
+  match_performances  match_performances[]
+  player_profiles     player_profiles[]
+  player_team_history player_team_history[]
+
+  @@index([country, league], map: "teams_country_1372d9_idx")
+  @@index([name], map: "teams_name_12b53a_idx")
+  @@index([name], map: "teams_name_bd7d028e_like")
 }
