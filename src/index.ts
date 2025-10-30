@@ -1,19 +1,23 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import authRouter from './routers/auth'
-dotenv.config();
-console.log("Loaded FIREBASE_PRIVATE_KEY:", process.env.FIREBASE_PRIVATE_KEY ? "✅ Exists" : "❌ Missing");
+import express from "express";
+import cors from "cors";
+import authRouter from "./routers/auth";
 
+const app = express();
 
-const app = express()
-app.use(express.json())
+app.use(express.json());
 
-app.get('/',(req,res)=>{
-    return res.json('Hello World')
-})
-app.use('/auth', authRouter);
+app.use(cors({
+  origin: "http://localhost:3000", // frontend
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+}));
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+app.get("/", (req, res) => res.json("Hello World"));
+
+app.use("/auth", authRouter);
+
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 4000;
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`Server running on http://localhost:${PORT}`)
+);
